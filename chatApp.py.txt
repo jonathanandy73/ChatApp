@@ -1,0 +1,168 @@
+import tkinter as tk
+from tkinter import messagebox
+from string import ascii_lowercase, ascii_uppercase, digits, punctuation
+import tkinter
+import json
+import os
+
+# -------------------------
+# Charger comptes existants
+# -------------------------
+FILE_NAME = "accounts.json"
+
+if os.path.exists(FILE_NAME):
+    with open(FILE_NAME, "r") as f:
+        accounts = json.load(f)
+else:
+    accounts = {}
+
+# -------------------------
+# Sauvegarde des comptes
+# -------------------------
+def save_accounts():
+    with open(FILE_NAME, "w") as f:
+        json.dump(accounts, f, indent=4)
+
+
+#window setup
+window = tkinter.Tk() # erstellen von Fenster
+window.title("ChattApp")
+window.resizable(False, False)
+
+frame = tkinter.Frame(window)
+label = tkinter.Label(frame, text= "", font= ("chiller", 50), background= "black", foreground="white", anchor="e")
+label.grid(row=0, column=0, columnspan=2, sticky= "we")
+
+label_title = tk.Label(frame, text="Bienvenue sur ChatApp", font=("chiller", 16))
+label_title.grid(row=0, column=0, columnspan=2, pady=10)
+
+
+# Nom d'utilisateur
+label_username = tk.Label(frame, text="Nom d’utilisateur :")
+label_username.grid(row=1, column=0, sticky="e", padx=5, pady=5)
+entry_username = tk.Entry(frame, width=25)
+entry_username.grid(row=1, column=1, padx=5, pady=5)
+
+
+# Mot de passe
+label_password = tk.Label(frame, text="Mot de passe :")
+label_password.grid(row=2, column=0, sticky="e", padx=5, pady=5)
+entry_password = tk.Entry(frame, width=25, show="*")  # show="*" masque le mot de passe
+entry_password.grid(row=2, column=1, padx=5, pady=5)
+
+def create_account():
+    username = entry_username.get().strip()
+    password = entry_password.get().strip()
+    # tu peux réutiliser is_password_ok pour la validation
+    if is_passwort_ok(username, password):
+        accounts[username] = password  # ajouter le compte
+        save_accounts()                # sauvegarder dans le fichier JSON
+        messagebox.showinfo("Compte créé", f"Compte pour {username} créé !")
+
+def login():
+    global username, password
+    username = entry_username.get().strip()
+    password = entry_password.get().strip()
+    if username in accounts and accounts[username] == password:
+       open_chat_window(username)
+    else:
+       messagebox.showerror("Erreur", "Nom d’utilisateur ou mot de passe incorrect.")
+    
+
+def open_chat_window(username):
+    global entry_message, text_area
+
+    chat_window = tk.Toplevel(window)
+    chat_window.title(f"Chat - {username}")
+
+    label = tk.Label(chat_window, text=f"Bienvenue dans le chat, {username} !", font=("chiller", 14))
+    label.pack(pady=10)
+    global entry_message, text_area
+
+    text_area = tk.Text(chat_window, height=15, width=50, state="disabled")
+    text_area.pack(padx=10, pady=10)
+    
+
+    entry_message = tk.Entry(chat_window, width=40)
+    entry_message.pack(side="left", padx=10, pady=10)
+    btn_send = tk.Button(chat_window, text="Envoyer", width=10, command=send_message)
+    btn_send.pack(side="left", padx=5, pady=10)
+    
+
+def send_message():
+        global entry_message, text_area
+        msg = entry_message.get().strip()
+        if msg:
+            text_area.config(state="normal")
+            username = entry_username.get().strip()
+            text_area.insert("end", f"{username}: {msg}\n")
+            text_area.config(state="disabled")
+            entry_message.delete(0, "end")
+
+
+
+
+# Boutons
+btn_login = tk.Button(frame, text="Connexion", width=12, command=login)
+btn_login.grid(row=3, column=0, pady=15)
+
+btn_create = tk.Button(frame, text="Créer un compte", width=15, command=create_account)
+btn_create.grid(row=3, column=1, pady=15)
+
+
+
+    
+
+
+def is_passwort_ok(username: str, password: str, min_length: int = 8) -> bool :
+    if len(password) < min_length:
+        messagebox.showerror("Mot de passe faible",
+                             "Le mot de passe doit contenir au moins 8 caractères.")
+        return False
+      
+    if not username or not password:
+        messagebox.showwarning("Erreur", "Veuillez remplir tous les champs.")
+        return False
+   
+    
+    # Initialisation des conditions
+    has_upper = False
+    has_lower = False
+    has_digit = False
+    has_special = False
+
+    # Vérifier caractère par caractère
+    for char in password:
+        if char in ascii_uppercase:
+            has_upper = True
+        elif char in ascii_lowercase:
+            has_lower = True
+        elif char in digits:
+            has_digit = True
+        elif char in punctuation:
+            has_special = True
+
+    # Vérifier si toutes les conditions sont remplies
+    if has_upper and has_lower and has_digit and has_special:
+        messagebox.showinfo("Connexion réussie", f"Bienvenue, {username} !")
+
+        return True
+    else:
+        messagebox.showerror("Mot de passe faible",
+                             "Le mot de passe doit contenir :\n- Majuscules\n- Minuscules\n- Chiffres\n- Caractères spéciaux")
+        return False
+
+
+
+
+
+def clicked_button(valeur):
+    global btn_create, btn_login, btn_send 
+
+    if valeur == btn_create:
+        create_account()
+    elif valeur == btn_login:
+        login()
+
+frame.pack(padx=10, pady=10)
+window.mainloop()
